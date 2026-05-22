@@ -1,4 +1,4 @@
-import { supabase } from '@/core/supabase';
+import { supabase } from '../core/supabase';
 
 interface CartModification {
   ingredient_id: string;
@@ -7,7 +7,7 @@ interface CartModification {
 }
 
 interface CartItem {
-  id: string; // ID del prodotto
+  id: string;
   name: string;
   price: number;
   quantity: number;
@@ -19,7 +19,7 @@ interface OrderPayload {
   restaurantWhatsapp: string;
   customerName: string;
   customerPhone: string;
-  tableOrDelivery: string; // es. "Tavolo 4", "Asporto", "Domicilio"
+  tableOrDelivery: string;
   notes?: string;
   items: CartItem[];
   totalAmount: number;
@@ -29,7 +29,6 @@ interface OrderPayload {
  * Salva l'ordine su Supabase con relazioni corrette e modifiche JSONB
  */
 export async function createOrder(payload: OrderPayload) {
-  // 1. Inserisce l'ordine principale
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
@@ -49,13 +48,12 @@ export async function createOrder(payload: OrderPayload) {
     return null;
   }
 
-  // 2. Prepara i singoli elementi del carrello mappando le modifiche nel JSONB
   const orderItemsData = payload.items.map(item => ({
     order_id: order.id,
     product_id: item.id,
     quantity: item.quantity,
     unit_price: item.price,
-    modifications: item.modifications // Array JSONB nativo
+    modifications: item.modifications
   }));
 
   const { error: itemsError } = await supabase
@@ -67,14 +65,13 @@ export async function createOrder(payload: OrderPayload) {
     return null;
   }
 
-  // 3. Genera il link di reindirizzamento WhatsApp
   const whatsappUrl = generateWhatsAppLink(payload);
 
   return { orderId: order.id, whatsappUrl };
 }
 
 /**
- * Compone la stringa di testo pulita per il ristoratore e genera il link WhatsApp Web/App
+ * Compone la stringa di testo pulita per il ristoratore e genera il link WhatsApp
  */
 function generateWhatsAppLink(payload: OrderPayload): string {
   let text = `*Nuovo Ordine da ZeroFila* 🚀\n\n`;
@@ -86,7 +83,6 @@ function generateWhatsAppLink(payload: OrderPayload): string {
   payload.items.forEach(item => {
     text += `\n*${item.quantity}x* ${item.name} (_€${item.price.toFixed(2)}_)`;
     
-    // Processa aggiunte o rimozioni per questo specifico piatto
     if (item.modifications && item.modifications.length > 0) {
       item.modifications.forEach(mod => {
         if (mod.action === 'added') text += `\n  ➕ Extra: ${mod.name}`;
@@ -99,10 +95,8 @@ function generateWhatsAppLink(payload: OrderPayload): string {
   if (payload.notes) text += `📝 *Note:* ${payload.notes}\n\n`;
   text += `💰 *TOTALE DA PAGARE:* €${payload.totalAmount.toFixed(2)}`;
 
-  // Encode del testo per URL e pulizia del numero di telefono
   const encodedText = encodeURIComponent(text);
-  const cleanPhone = payload.restaurantWhatsapp.replace(/\D/g, ''); // Solo numeri senza spazi o '+'
+  const cleanPhone = payload.restaurantWhatsapp.replace(/\D/g, '');
 
   return `https://wa.me{cleanPhone}?text=${encodedText}`;
 }
-
