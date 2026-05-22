@@ -1,4 +1,4 @@
-import { supabase } from '@/core/supabase';
+import { supabase } from '../core/supabase';
 
 /**
  * Recupera tutti i dati di un ristorante, comprese le categorie, 
@@ -40,8 +40,6 @@ export async function getRestaurantMenuBySlug(slug: string) {
       )
     `)
     .eq('slug', slug)
-    .eq('categories.is_active', true)
-    .eq('categories.products.is_available', true)
     .single();
 
   if (error) {
@@ -54,7 +52,6 @@ export async function getRestaurantMenuBySlug(slug: string) {
 
 /**
  * Recupera l'elenco completo degli ingredienti disponibili in un ristorante
- * (utile per la schermata di personalizzazione/aggiunta extra nel carrello).
  */
 export async function getRestaurantIngredients(restaurantId: string) {
   const { data, error } = await supabase
