@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'url';
 import path from 'path';
 
-// Configurazione ufficiale di Vite con supporto agli Alias di percorso (@/)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configurazione ufficiale di Vite con supporto agli Alias di percorso standard
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -12,6 +16,6 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: true // Permette di testare l'app sullo smartphone in rete locale
+    host: true
   }
 });
